@@ -80,10 +80,6 @@ if st.button("Get Forecast"):
     # Get the forecast
     forecast_df = get_forecast_from_sagemaker(combined_df, endpoint_name, aws_region, aws_access_key_id, aws_secret_access_key)
     if forecast_df is not None:
-        if forecast_type == "Long Term":
-            # Restrict long-term predictions to 365 days
-            forecast_df = forecast_df.head(365)
-        
         # Filter out weekends
         forecast_df = filter_weekends(forecast_df)
         
@@ -95,15 +91,10 @@ if st.button("Get Forecast"):
         next_day_forecast = forecast_df.head(1)
         st.write(next_day_forecast[["Date", "mean", "p10", "p50", "p90"]])
         
-        # Display the next 30 days' prediction
-        st.subheader("Prediction for the Next 30 Days")
-        next_30_days_forecast = forecast_df.head(30)
-        st.write(next_30_days_forecast[["Date", "mean", "p10", "p50", "p90"]])
-        
         # Display the full forecast table with probabilities
         st.subheader("Full Forecast with Probabilities")
         st.write(forecast_df[["Date", "mean", "p10", "p50", "p90"]])
-
+        
         # Create and display a line chart for the forecast with error bands
         base = alt.Chart(forecast_df).encode(x='Date:T')
 
@@ -120,6 +111,18 @@ if st.button("Get Forecast"):
 
         chart_with_band = band + line
         st.altair_chart(chart_with_band, use_container_width=True)
+
+        # Combined historical and forecast chart for meaningful analysis
+        combined_chart = alt.Chart(pd.concat([historical_df, forecast_df])).mark_line().encode(
+            x='Date:T',
+            y=alt.Y('mean:Q', title='Price (INR)'),
+            tooltip=['Date:T', 'mean:Q', 'p10:Q', 'p50:Q', 'p90:Q']
+        ).properties(
+            width=800,
+            height=400
+        ).interactive()
+
+        st.altair_chart(combined_chart, use_container_width=True)
 
         # Probability distribution chart for the forecast
         st.subheader("Probability Distribution of Forecasted Prices")
