@@ -43,6 +43,12 @@ def get_forecast_from_sagemaker(data, endpoint_name, aws_region, aws_access_key_
         st.error(f"Error invoking endpoint: {e}")
         return None
 
+# Function to filter out weekends from the forecast data
+def filter_weekends(df):
+    df['Date'] = pd.to_datetime(df['Date'])
+    df = df[df['Date'].dt.dayofweek < 5]  # Keep only weekdays (0 = Monday, ..., 4 = Friday)
+    return df
+
 # Streamlit interface
 st.title("Forecast Tata Motors Stock")
 
@@ -77,6 +83,10 @@ if st.button("Get Forecast"):
         if forecast_type == "Long Term":
             # Restrict long-term predictions to 365 days
             forecast_df = forecast_df.head(365)
+        
+        # Filter out weekends
+        forecast_df = filter_weekends(forecast_df)
+        
         # Reset index to start from 1
         forecast_df.index = forecast_df.index + 1
         
