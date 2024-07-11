@@ -55,21 +55,6 @@ forecast_type = st.selectbox("Select Forecast Type", ["Short Term", "Long Term"]
 # Load the historical data from the local file
 historical_df = pd.read_csv(local_file_path)
 
-# Display historical adjusted closing prices
-st.subheader("Historical Adjusted Closing Prices")
-st.write(historical_df[["Date", "Adj Close"]].tail(30))  # Display the last 30 days for brevity
-
-historical_chart = alt.Chart(historical_df.tail(30)).mark_line().encode(
-    x='Date:T',
-    y='Adj Close:Q',
-    tooltip=['Date:T', 'Adj Close:Q']
-).properties(
-    width=800,
-    height=400
-).interactive()
-
-st.altair_chart(historical_chart, use_container_width=True)
-
 # Prepare the data for prediction
 def prepare_data_for_prediction(historical_data):
     # Assume the future dates and other necessary columns will be added by the model
@@ -108,18 +93,6 @@ if st.button("Get Forecast"):
         # Display the full forecast table with probabilities
         st.subheader("Full Forecast with Probabilities")
         st.write(forecast_df[["Date", "mean", "p10", "p50", "p90"]])
-
-        # Combined historical and forecast chart
-        combined_chart = alt.Chart(pd.concat([historical_df, forecast_df])).mark_line().encode(
-            x='Date:T',
-            y=alt.Y('mean:Q', title='Price (INR)'),
-            tooltip=['Date:T', 'mean:Q', 'p10:Q', 'p50:Q', 'p90:Q']
-        ).properties(
-            width=800,
-            height=400
-        ).interactive()
-
-        st.altair_chart(combined_chart, use_container_width=True)
 
         # Create and display a line chart for the forecast with error bands
         base = alt.Chart(forecast_df).encode(x='Date:T')
