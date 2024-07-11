@@ -1,34 +1,41 @@
 import streamlit as st
 import boto3
 import json
+import requests
 
-# Initialize the SageMaker runtime client
-runtime = boto3.client('runtime.sagemaker')
+# Specify your AWS region
+aws_region = "eu-north-1"
+
+# Initialize the SageMaker runtime client with the specified region
+runtime = boto3.client('sagemaker-runtime', region_name=aws_region)
 
 # Function to get prediction from the endpoint
-def get_prediction(data, endpoint_name):
-    response = runtime.invoke_endpoint(
-        EndpointName=endpoint_name,
-        ContentType='application/json',
-        Body=json.dumps(data)
-    )
-    result = json.loads(response['Body'].read().decode())
-    return result
+def get_prediction(data, endpoint_url):
+    headers = {"Content-Type": "application/json"}
+    response = requests.post(endpoint_url, headers=headers, data=json.dumps(data))
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": response.text}
 
 # Streamlit app
 st.title("Stock Forecasting Application")
 
 # Input data
-data = st.text_input("Enter your data:")
+data = st.text_area("Enter your data (JSON format):")
 
 # Select forecast term
 term = st.selectbox("Select Forecast Term", ["Short Term (7 days)", "Long Term (Annually)"])
 
 if st.button("Predict"):
-    if term == "Short Term (7 days)":
-        endpoint_name = "https://runtime.sagemaker.eu-north-1.amazonaws.com/endpoints/canvas-shortterm/invocations"  # Replace with your endpoint name
-    elif term == "Long Term (Annually)":
-        endpoint_name = "https://runtime.sagemaker.eu-north-1.amazonaws.com/endpoints/canvas-new-deployment-07-11-2024-2-00-AM/invocations"  # Replace with your endpoint name
+    try:
+        input_data = json.loads(data)  # Parse the JSON input
+        if term == "Short Term (7 days)":
+            endpoint_url = "https://runtime.sagemaker.eu-north-1.amazonaws.com/endpoints/canvas-shortterm/invocations"
+        elif term == "Long Term (Annually)":
+            endpoint_url = "https://runtime.sagemaker.eu-north-1.amazonaws.com/endpoints/canvas-new-deployment-07-11-2024-2-00-AM/invocations"
 
-    result = get_prediction(data, endpoint_name)
-    st.write("Prediction Result:", result)
+        result = get_prediction(input_data, endpoint_url)
+        st.write("Prediction Result:", result)
+    except json.JSONDecodeError:
+        st.error("Invalid JSON format. Please check your input.")
