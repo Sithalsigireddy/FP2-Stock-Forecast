@@ -13,8 +13,8 @@ SHORT_TERM_ENDPOINT_NAME = "canvas-shortterm"  # Short-term endpoint name
 LONG_TERM_ENDPOINT_NAME = "canvas-new-deployment-07-11-2024-2-00-AM"  # Long-term endpoint name
 
 # Local path where the downloaded file is saved
-local_file_path = 'newprocessed_TATAMOTORS.NS_stock_data_10July.csv'
-#local_file_path = 'newprocessed_TATAMOTORS.NS_stock_data.csv'
+#local_file_path = 'newprocessed_TATAMOTORS.NS_stock_data_10July.csv'
+local_file_path = 'newprocessed_TATAMOTORS.NS_stock_data.csv'
 
 # Function to call the SageMaker endpoint
 def get_forecast_from_sagemaker(data, endpoint_name, aws_region, aws_access_key_id, aws_secret_access_key):
