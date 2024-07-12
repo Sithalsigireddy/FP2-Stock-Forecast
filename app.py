@@ -91,7 +91,7 @@ if st.button("Get Forecast"):
         
         # Display the forecast
         st.subheader("Forecast")
-        st.write("Stock prices are in INR.")
+        st.write("Forecasted stock prices for Tata Motors in INR. The table includes predicted values for weekdays and indicates market closures on weekends.")
         
         # Separate the mean forecast from the probabilities
         forecast_mean_df = forecast_df[['Date', 'mean']].copy()
