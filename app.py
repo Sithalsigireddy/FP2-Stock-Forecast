@@ -94,7 +94,7 @@ if st.button("Get Forecast"):
         st.write("Forecasted stock prices for Tata Motors in INR. The table includes predicted values for weekdays and indicates market closures on weekends.")
         
         # Separate the mean forecast from the probabilities
-        forecast_mean_df = forecast_df[['Date', 'mean']].copy()
+        forecast_mean_df = forecast_df[['Date', 'Forecasted Value']].copy()
         forecast_probabilities_df = forecast_df[['Date', 'p10', 'p50', 'p90']].copy()
         
         # Display the forecasted values
