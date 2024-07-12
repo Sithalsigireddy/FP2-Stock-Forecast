@@ -78,7 +78,7 @@ if st.button("Get Forecast"):
             forecast_df = forecast_df.head(365)
         
         # Convert 'Date' column to datetime
-        forecast_df['Date'] = pd.to_datetime(forecast_df['Date']).dt.date
+        forecast_df['Date'] = pd.to_datetime(forecast_df['Date'])
         
         # Create a mask for weekends
         is_weekend = forecast_df['Date'].dt.dayofweek.isin([5, 6])
