@@ -81,10 +81,14 @@ if st.button("Get Forecast"):
         forecast_df['Date'] = pd.to_datetime(forecast_df['Date']).dt.date
         
         # Create a mask for weekends
-        is_weekend = forecast_df['Date'].dt.dayofweek.isin([5, 6])
+        forecast_df['DayOfWeek'] = pd.to_datetime(forecast_df['Date']).dt.dayofweek
+        is_weekend = forecast_df['DayOfWeek'].isin([5, 6])
         
         # Replace values for weekends with the message
         forecast_df.loc[is_weekend, ['mean', 'p10', 'p50', 'p90']] = "Market is closed on weekends"
+        
+        # Remove 'DayOfWeek' column as it's no longer needed
+        forecast_df = forecast_df.drop(columns=['DayOfWeek'])
         
         # Reset index to start from 1
         forecast_df.index = forecast_df.index + 1
