@@ -2,7 +2,6 @@ import streamlit as st
 import boto3
 import pandas as pd
 import io
-import altair as alt
 
 # Load AWS credentials from Streamlit secrets
 aws_access_key_id = st.secrets["aws_access_key_id"]
@@ -10,11 +9,12 @@ aws_secret_access_key = st.secrets["aws_secret_access_key"]
 aws_region = st.secrets["region"]
 
 # Define the SageMaker endpoint names
-SHORT_TERM_ENDPOINT_NAME = "canvas-shortterm"
-LONG_TERM_ENDPOINT_NAME = "canvas-new-deployment-07-11-2024-2-00-AM"
+SHORT_TERM_ENDPOINT_NAME = "canvas-shortterm"  # Short-term endpoint name
+LONG_TERM_ENDPOINT_NAME = "canvas-new-deployment-07-11-2024-2-00-AM"  # Long-term endpoint name
 
-# Local path where the downloaded file is saved
-local_file_path = 'newprocessed_TATAMOTORS.NS_stock_data.csv'
+# Local paths for the CSV files
+short_term_file_path = 'deploy.csv'
+long_term_file_path = 'newprocessed_TATAMOTORS.NS_stock_data.csv'
 
 # Function to call the SageMaker endpoint
 def get_forecast_from_sagemaker(data, endpoint_name, aws_region, aws_access_key_id, aws_secret_access_key):
@@ -43,12 +43,6 @@ def get_forecast_from_sagemaker(data, endpoint_name, aws_region, aws_access_key_
         st.error(f"Error invoking endpoint: {e}")
         return None
 
-# Function to filter out weekends from the forecast data
-def filter_weekends(df):
-    df['Date'] = pd.to_datetime(df['Date'])
-    df = df[df['Date'].dt.dayofweek < 5]  # Keep only weekdays (0 = Monday, ..., 4 = Friday)
-    return df
-
 # Streamlit interface
 st.title("Forecast Tata Motors Stock")
 
@@ -58,8 +52,13 @@ st.info("Select 'Short Term' for a 7-day forecast or 'Long Term' for a 365-day f
 # Dropdown for forecast type
 forecast_type = st.selectbox("Select Forecast Type", ["Short Term", "Long Term"])
 
-# Load the historical data from the local file
-historical_df = pd.read_csv(local_file_path)
+# Load the appropriate historical data based on the forecast type
+if forecast_type == "Short Term":
+    historical_df = pd.read_csv(short_term_file_path)
+    endpoint_name = SHORT_TERM_ENDPOINT_NAME
+else:
+    historical_df = pd.read_csv(long_term_file_path)
+    endpoint_name = LONG_TERM_ENDPOINT_NAME
 
 # Prepare the data for prediction
 def prepare_data_for_prediction(historical_data):
@@ -69,72 +68,29 @@ def prepare_data_for_prediction(historical_data):
 # Prepare combined data
 combined_df = prepare_data_for_prediction(historical_df)
 
-# Select the appropriate endpoint
-if forecast_type == "Short Term":
-    endpoint_name = SHORT_TERM_ENDPOINT_NAME
-else:
-    endpoint_name = LONG_TERM_ENDPOINT_NAME
-
 # Display a button to trigger the forecast
 if st.button("Get Forecast"):
     # Get the forecast
     forecast_df = get_forecast_from_sagemaker(combined_df, endpoint_name, aws_region, aws_access_key_id, aws_secret_access_key)
     if forecast_df is not None:
-        # Filter out weekends
-        forecast_df = filter_weekends(forecast_df)
-        
+        if forecast_type == "Long Term":
+            # Restrict long-term predictions to 365 days
+            forecast_df = forecast_df.head(365)
         # Reset index to start from 1
         forecast_df.index = forecast_df.index + 1
         
-        # Display the next day's prediction
-        st.subheader("Prediction for the Next Day")
-        next_day_forecast = forecast_df.head(1)
-        st.write(next_day_forecast[["Date", "mean", "p10", "p50", "p90"]])
+        # Display the forecast
+        st.subheader("Forecast")
+        st.write("Stock prices are in INR.")
         
-        # Display the full forecast table with probabilities
-        st.subheader("Full Forecast with Probabilities")
-        st.write(forecast_df[["Date", "mean", "p10", "p50", "p90"]])
+        # Separate the mean forecast from the probabilities
+        forecast_mean_df = forecast_df[['Date', 'mean']].copy()
+        forecast_probabilities_df = forecast_df[['Date', 'p10', 'p50', 'p90']].copy()
         
-        # Create and display a line chart for the forecast with error bands
-        base = alt.Chart(forecast_df).encode(x='Date:T')
-
-        line = base.mark_line().encode(
-            y='mean:Q',
-            color=alt.value('blue'),
-            tooltip=['Date:T', 'mean:Q']
-        )
-
-        band = base.mark_area(opacity=0.3).encode(
-            y='p10:Q',
-            y2='p90:Q'
-        )
-
-        chart_with_band = band + line
-        st.altair_chart(chart_with_band, use_container_width=True)
-
-        # Combined historical and forecast chart for meaningful analysis
-        combined_chart = alt.Chart(pd.concat([historical_df, forecast_df])).mark_line().encode(
-            x='Date:T',
-            y=alt.Y('mean:Q', title='Price (INR)'),
-            tooltip=['Date:T', 'mean:Q', 'p10:Q', 'p50:Q', 'p90:Q']
-        ).properties(
-            width=800,
-            height=400
-        ).interactive()
-
-        st.altair_chart(combined_chart, use_container_width=True)
-
-        # Probability distribution chart for the forecast
-        st.subheader("Probability Distribution of Forecasted Prices")
-        probability_chart = alt.Chart(forecast_df).transform_density(
-            'mean',
-            as_=['mean', 'density'],
-        ).mark_area().encode(
-            x='mean:Q',
-            y='density:Q'
-        ).properties(
-            width=800,
-            height=400
-        )
-
-        st.altair_chart(probability_chart, use_container_width=True)
+        # Display the forecasted values
+        st.write("### Forecasted Values")
+        st.table(forecast_mean_df)
+        
+        # Display the probabilities
+        st.write("### Probabilities")
+        st.table(forecast_probabilities_df)
