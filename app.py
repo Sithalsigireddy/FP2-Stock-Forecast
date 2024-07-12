@@ -108,4 +108,7 @@ if st.button("Get Forecast"):
         
         # Display the probabilities
         st.write("### Probabilities")
-        st.table(forecast
+        st.table(forecast_probabilities_df)
+        
+        # Display a note about market closure on weekends
+        st.write("*Note: The market is closed on Saturdays and Sundays.*")
