@@ -76,6 +76,16 @@ if st.button("Get Forecast"):
         if forecast_type == "Long Term":
             # Restrict long-term predictions to 365 days
             forecast_df = forecast_df.head(365)
+        
+        # Convert 'Date' column to datetime
+        forecast_df['Date'] = pd.to_datetime(forecast_df['Date'])
+        
+        # Create a mask for weekends
+        is_weekend = forecast_df['Date'].dt.dayofweek.isin([5, 6])
+        
+        # Replace values for weekends with the message
+        forecast_df.loc[is_weekend, ['mean', 'p10', 'p50', 'p90']] = "Market is closed on weekends"
+        
         # Reset index to start from 1
         forecast_df.index = forecast_df.index + 1
         
@@ -94,3 +104,6 @@ if st.button("Get Forecast"):
         # Display the probabilities
         st.write("### Probabilities")
         st.table(forecast_probabilities_df)
+        
+        # Display a note about market closure on weekends
+        st.write("*Note: The market is closed on Saturdays and Sundays.*")
