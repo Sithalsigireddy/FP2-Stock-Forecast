@@ -80,11 +80,18 @@ if st.button("Get Forecast"):
         # Convert 'Date' column to datetime
         forecast_df['Date'] = pd.to_datetime(forecast_df['Date'])
         
-        # Filter out weekends
-        forecast_df = forecast_df[~forecast_df['Date'].dt.dayofweek.isin([5, 6])]
-        
         # Format the 'Date' column to show only the date part
         forecast_df['Date'] = forecast_df['Date'].dt.date
+        
+        # Add weekends with "Weekend - Market Closed"
+        all_dates = pd.date_range(start=forecast_df['Date'].min(), end=forecast_df['Date'].max(), freq='D')
+        all_dates_df = pd.DataFrame(all_dates, columns=['Date'])
+        forecast_df = pd.merge(all_dates_df, forecast_df, on='Date', how='left')
+        
+        forecast_df['mean'] = forecast_df.apply(lambda row: "Weekend - Market Closed" if row['Date'].weekday() >= 5 else row['mean'], axis=1)
+        forecast_df['p10'] = forecast_df.apply(lambda row: "Weekend - Market Closed" if row['Date'].weekday() >= 5 else row['p10'], axis=1)
+        forecast_df['p50'] = forecast_df.apply(lambda row: "Weekend - Market Closed" if row['Date'].weekday() >= 5 else row['p50'], axis=1)
+        forecast_df['p90'] = forecast_df.apply(lambda row: "Weekend - Market Closed" if row['Date'].weekday() >= 5 else row['p90'], axis=1)
         
         # Reset index to start from 1
         forecast_df.index = forecast_df.index + 1
