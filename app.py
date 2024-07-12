@@ -83,6 +83,9 @@ if st.button("Get Forecast"):
         # Filter out weekends
         forecast_df = forecast_df[~forecast_df['Date'].dt.dayofweek.isin([5, 6])]
         
+        # Format the 'Date' column to show only the date part
+        forecast_df['Date'] = forecast_df['Date'].dt.date
+        
         # Reset index to start from 1
         forecast_df.index = forecast_df.index + 1
         
