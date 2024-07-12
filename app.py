@@ -78,7 +78,7 @@ if st.button("Get Forecast"):
             forecast_df = forecast_df.head(365)
         
         # Convert 'Date' column to datetime
-        forecast_df['Date'] = pd.to_datetime(forecast_df['Date'])
+        forecast_df['Date'] = pd.to_datetime(forecast_df['Date']).dt.date
         
         # Create a mask for weekends
         is_weekend = forecast_df['Date'].dt.dayofweek.isin([5, 6])
@@ -88,6 +88,11 @@ if st.button("Get Forecast"):
         
         # Reset index to start from 1
         forecast_df.index = forecast_df.index + 1
+        
+        # Style the dataframe
+        def style_forecast(df):
+            df_styled = df.style.applymap(lambda x: 'color: red; background-color: lightgray' if x == "Market is closed on weekends" else '', subset=['mean'])
+            return df_styled
         
         # Display the forecast
         st.subheader("Forecast")
@@ -99,11 +104,8 @@ if st.button("Get Forecast"):
         
         # Display the forecasted values
         st.write("### Forecasted Values")
-        st.table(forecast_mean_df)
+        st.write(style_forecast(forecast_mean_df).hide_index().set_table_styles({'Date': {'selector': 'td', 'props': 'text-align: center;'}}), unsafe_allow_html=True)
         
         # Display the probabilities
         st.write("### Probabilities")
-        st.table(forecast_probabilities_df)
-        
-        # Display a note about market closure on weekends
-        st.write("*Note: The market is closed on Saturdays and Sundays.*")
+        st.table(forecast
